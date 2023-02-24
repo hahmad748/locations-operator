@@ -260,9 +260,4 @@ class LocationController extends Controller
         
     }
 
-    public function apiResponse($location)
-    {
-        return $location->name;
-    }
-
 }
