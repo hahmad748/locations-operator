@@ -3,6 +3,10 @@
 # Devsfort Location Operator Laravel Package
 Devsfort Location Operator is a Laravel package that has been developed to cater to custom requirements of location-based searches on a multi-level approach. This package migrates and seeds locations in the database and then allows search on the basis of suburb, region name, city, state, and local government area.
 
+### Currently it supports Locations for 
+-   Australia
+
+
 ## Installation
 To install the Devsfort Location Operator package, follow these simple steps:
 
