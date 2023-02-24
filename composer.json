@@ -1,0 +1,36 @@
+{
+    "name": "devsfort/locations-operator",
+    "description": "A Laravel package that allows you to Search through location using Suburbs, City, Region, Local Government Area, State. Currently it supports Australian Locations",
+    "keywords": ["laravel", "locations", "places","australia","search","location-search","php"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Haseeb Ahmad",
+            "email": "hahmad748@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.3||^7.4||^8.0||^8.1||^8.2",
+        "laravel/framework": "^7.0||^8.0||^9.0||^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Devsfort\\Location\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        },
+        "laravel": {
+            "providers": [
+                "Devsfort\\Location\\LocationServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
