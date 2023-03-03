@@ -17,6 +17,7 @@ class LocationServiceProvider extends ServiceProvider
         app()->bind('DevsfortLocation', function () {
             return new DevsfortLocation();
         });
+
     }
 
     /**
