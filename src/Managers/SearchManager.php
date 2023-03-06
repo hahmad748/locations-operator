@@ -81,48 +81,23 @@ class SearchManager extends BaseManager {
         $query = $request->search_key;
         $limit = (int) $request->limit > 0 ? (int) $request->limit : 10; 
 
-        // Name/ suburb level search
-        $response   =  BaseManager::getAlgoliaResultOnFilters('name',$query,$limit); 
-         
-        if($response){
-            $uniqueResults = BaseManager::locationTransformer('name',$response);
-            return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
+        $searchLevel = ['name','region','urban_area','state','state_code'];
+
+        foreach($searchLevel as $level){
+            $response   =  BaseManager::getAlgoliaResultOnFilters($level,$query,$limit); 
+            if($response){
+                $uniqueResults = BaseManager::locationTransformer($level,$response);
+                return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
+            }    
         }
 
-        // Search on region level
-        $response   =  BaseManager::getAlgoliaResultOnFilters('region',$query,$limit); 
-        if($response){
-            $uniqueResults = BaseManager::locationTransformer('region',$response);
-            return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
-        }
-
-          // Search on city / urban_area level
-          $response   =  BaseManager::getAlgoliaResultOnFilters('urban_area',$query,$limit); 
-          if($response){
-              $uniqueResults = BaseManager::locationTransformer('urban_area',$response);
-              return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
-          }
-        // Search on state level
-        $response   =  BaseManager::getAlgoliaResultOnFilters('state',$query,$limit); 
-        if($response){
-            $uniqueResults = BaseManager::locationTransformer('state',$response);
-            return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
-        }
-         // Search on state level
-         $response   =  BaseManager::getAlgoliaResultOnFilters('state_code',$query,$limit); 
-         if($response){
-             $uniqueResults = BaseManager::locationTransformer('state_code',$response);
-             return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
-         }
-
+        //  Fallback method to fuzzy search
          $response   =  BaseManager::getAlgoliaResultOnQuery($query,$limit); 
          if($response){
             $uniqueResults = BaseManager::locationTransformer('name',$response);
             return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
         }
 
-
-            
         
         return BaseManager::errorResponse('No Results found with specified criteria');
 
