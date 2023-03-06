@@ -42,14 +42,7 @@ class AlgoliaSearchManager extends Singleton {
      */
     public $request;
 
-    public $indexSettings = [
-        'searchableAttributes' => [
-          'name',
-          'region',
-          'state',
-          'urban_area'
-        ],
-      ];
+    public $indexSettings = [];
       
     public $searchQuery = [
         'page' => '0',
@@ -71,9 +64,12 @@ class AlgoliaSearchManager extends Singleton {
 
     public function searchResults($debug = false) {
         $this->createSearchQuery(false);
-        $queryStr = "";// $this->searchQuery['query'] && $this->searchQuery['query'] != "" ?  $this->searchQuery['query'] :"" ;
-        $this->searchQuery['clickAnalytics'] = true;
-        $this->searchQuery['typoTolerance']  = true; 
+        if($this->searchQuery['filters'] == ""){
+            $queryStr = $this->searchQuery['query'] && $this->searchQuery['query'] != "" ?  $this->searchQuery['query'] :"";
+        }else{
+            $queryStr = "";
+        }
+        $this->searchQuery['clickAnalytics'] = false;
         $searchResultResponse = $this->index->search($queryStr, $this->searchQuery);
         $searchResultResponse = $this->formatKeys($searchResultResponse);
         return $searchResultResponse;
@@ -84,7 +80,6 @@ class AlgoliaSearchManager extends Singleton {
         $this->createSearchQuery(false);
         $queryStr = "";
         $this->searchQuery['clickAnalytics'] = true;
-        $this->searchQuery['typoTolerance']  = true; 
         $searchResultResponse = $this->index->searchForFacetValues($attribute, $query, $this->searchQuery);
         $searchResultResponse = $this->formatKeys($searchResultResponse);
         return $searchResultResponse;
@@ -148,8 +143,11 @@ class AlgoliaSearchManager extends Singleton {
         }
         return $this;
     }
-    
 
+    public function unsetFilters() {
+        $this->searchQuery['filters'] = [];
+        return $this;
+    }
 
 
     public function query($queryTerm) {
@@ -159,15 +157,6 @@ class AlgoliaSearchManager extends Singleton {
         return $this;
     }
 
-
-    // public function searchable($attribute){
-    //     if ($attribute) {
-    //         $this->indexSettings['searchableAttributes'] = $attribute;
-    //         $this->index->setSettings($this->indexSettings);
-    //         $this->searchQuery['attributesToRetrieve'] = "*";
-    //     }
-    //     return $this;
-    // }
 
 
     public function initializeFilters()

@@ -27,15 +27,28 @@ class BaseManager
     }
 
 
-    public static function getAlgoliaResult($attribute,$query,$limit = 10){
+    public static function getAlgoliaResultOnFilters($attribute,$query,$limit = 10){
         $manager    = AlgoliaSearchManager::getInstance()
                         ->query($query)
                         ->filter($attribute,$query)
                         ->limit($limit);
         $results    = $manager->searchResults();
-        // $results    = $manager->searchForFacetValues($attribute,$query);
+
         if($results && $results['num_of_results'] > 0){
-            return  $results['results']; //
+            return  $results['results']; 
+        }
+        return false;
+    }
+
+    public static function getAlgoliaResultOnQuery($query,$limit = 10){
+        $manager    = AlgoliaSearchManager::getInstance()
+                        ->query($query)
+                        ->unsetFilters()
+                        ->limit($limit);
+        $results    = $manager->searchResults();
+
+        if($results && $results['num_of_results'] > 0){
+            return  $results['results']; 
         }
         return false;
     }

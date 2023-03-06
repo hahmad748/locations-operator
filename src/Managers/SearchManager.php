@@ -82,38 +82,45 @@ class SearchManager extends BaseManager {
         $limit = (int) $request->limit > 0 ? (int) $request->limit : 10; 
 
         // Name/ suburb level search
-        $response   =  BaseManager::getAlgoliaResult('name',$query,$limit); 
-        
+        $response   =  BaseManager::getAlgoliaResultOnFilters('name',$query,$limit); 
+         
         if($response){
             $uniqueResults = BaseManager::locationTransformer('name',$response);
             return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
         }
 
         // Search on region level
-        $response   =  BaseManager::getAlgoliaResult('region',$query,$limit); 
+        $response   =  BaseManager::getAlgoliaResultOnFilters('region',$query,$limit); 
         if($response){
             $uniqueResults = BaseManager::locationTransformer('region',$response);
             return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
         }
 
           // Search on city / urban_area level
-          $response   =  BaseManager::getAlgoliaResult('urban_area',$query,$limit); 
+          $response   =  BaseManager::getAlgoliaResultOnFilters('urban_area',$query,$limit); 
           if($response){
               $uniqueResults = BaseManager::locationTransformer('urban_area',$response);
               return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
           }
         // Search on state level
-        $response   =  BaseManager::getAlgoliaResult('state',$query,$limit); 
+        $response   =  BaseManager::getAlgoliaResultOnFilters('state',$query,$limit); 
         if($response){
             $uniqueResults = BaseManager::locationTransformer('state',$response);
             return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
         }
          // Search on state level
-         $response   =  BaseManager::getAlgoliaResult('state_code',$query,$limit); 
+         $response   =  BaseManager::getAlgoliaResultOnFilters('state_code',$query,$limit); 
          if($response){
              $uniqueResults = BaseManager::locationTransformer('state_code',$response);
              return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
          }
+
+         $response   =  BaseManager::getAlgoliaResultOnQuery($query,$limit); 
+         if($response){
+            $uniqueResults = BaseManager::locationTransformer('name',$response);
+            return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
+        }
+
 
             
         
