@@ -21,52 +21,109 @@ class SearchManager extends BaseManager {
         }
     }
 
+    public static function depth_picker($arr, $temp_string, &$collect, $desired_length) {
+        if ($temp_string != "" && count(explode(' ', $temp_string)) == $desired_length) {
+            $collect []= $temp_string;
+            return;
+        }
+    
+        for ($i=0, $iMax = sizeof($arr); $i < $iMax; $i++) {
+            $arrcopy = $arr;
+            $elem = array_splice($arrcopy, $i, 1); // removes and returns the i'th element
+            if (count(explode(' ', $temp_string)) < $desired_length) {
+                self::depth_picker($arrcopy, $temp_string ." " . $elem[0], $collect, $desired_length);
+            }
+        }
+    }
+    public static function generateSqlCondition($column, $array) {
+        $conditions = array();
+        foreach ($array as $value) {
+            $like_query = preg_replace('/\s+/', '%', trim($value));
+            $like_query = "%$like_query%";
+            $conditions[] = "$column like '$like_query'";
+        }
+        return implode(' OR ', $conditions);
+    }
+    
+
+
+
     public static function getResultsFromDatabase(Request $request)
     {
         try{
-            $limit = 10;
-            if((int) $request->limit > 0){
-                $limit = (int) $request->limit;
-            }
             $response = array();
+            $finalLocations = array();
             $searchLevel = 'name';
             if(isset($request->search_key)){
                 $searchKey = strtolower(trim($request->search_key));
                 $tokens = preg_split('/\s+/', $searchKey, -1, PREG_SPLIT_NO_EMPTY);
-                // Name/ suburb level search
-                $locations = Location::where('name', 'like', '%'.$searchKey.'%')->get();
-                if($locations->count() <= 0){
-                    $searchLevel = 'region';
-                    // Search on region level
-                    $locations = Location::where('region', 'like', '%'.$searchKey.'%')->get();
-                    if($locations->count() <= 0){
-                        $searchLevel = 'city';
-                        // Search on city level
-                        $locations = Location::where('city', 'like', '%'.$searchKey.'%')->get();
-                        if($locations->count() <= 0){
-                            $searchLevel = 'state';
-                            // Search on state level
-                            $locations = Location::where('state', 'like', '%'.$searchKey.'%')->orWhere('state_code', 'like', '%'.$searchKey.'%')->get();
-                        }
-                        if($locations->count() <= 0 && isset($request->include_local) && (bool) $request->include_local == true){
-                            // Search on local government area
-                            $searchLevel = 'local_government_area';
-                            $locations = Location::where('local_government_area', 'like', '%'.$searchKey.'%')->get();
-                        }
+                $collect = array();
+                self::depth_picker($tokens, "", $collect,sizeof($tokens) + 1);
+                $searchLevels = ['name','region','urban_area','state','state_code'];
+                if($request->include_local){
+                    $searchLevels[] = 'local_government_area';
+                }
+                $all_results = array();
+                $results = array();
+                foreach($searchLevels as $level){
+
+                    $sql_condition = self::generateSqlCondition($level,$collect);
+                    $locations = Location::whereRaw($sql_condition)->get();    
+                    if ($locations->count() > 0) {
+                        $values = $locations->toArray();
+                        $existing_ids = array_unique(array_column($all_results, 'id'));
+                        $new_values = array_filter($values, function($value) use ($existing_ids) {
+                            return !in_array($value['id'], $existing_ids);
+                        });
+                        $uniqueResults = BaseManager::locationTransformer($level,$new_values);
+                        $all_results = array_merge($all_results, $uniqueResults);
+                        $results[] = $uniqueResults;
                     }
                 }
 
-                if($locations->count() <= 0){
-                    return BaseManager::errorResponse('No Results found with specified criteria');
-                }
 
-                $uniqueResults = BaseManager::locationTransformer($searchLevel,$locations->toArray());
-                
-                $uniqueLimitedResponse = array_slice($uniqueResults, 0, $limit);
-                if(sizeof($uniqueLimitedResponse) <= 0){
+                // // Name/ suburb level search
+                // $sql_condition = self::generateSqlCondition($searchLevel,$collect);
+                // $locations = Location::whereRaw($sql_condition)->get();
+                // if($locations->count() <= 0){
+                //     $searchLevel = 'region';
+                //     // Search on region level
+                //     $sql_condition = self::generateSqlCondition($searchLevel,$collect);
+                //     $locations = Location::whereRaw($sql_condition)->get();
+                //     if($locations->count() <= 0){
+                //         $searchLevel = 'city';
+                //         // Search on city level
+                //         $sql_condition = self::generateSqlCondition($searchLevel,$collect);
+                //         $locations = Location::whereRaw($sql_condition)->get();
+                //         if($locations->count() <= 0){
+                //             $searchLevel = 'state';
+                //             // Search on state level
+                //             $sql_condition = self::generateSqlCondition($searchLevel,$collect);
+                //             $locations = Location::whereRaw($sql_condition)->get();
+                //             if($locations->count() <= 0){
+                //                 $searchLevel = 'state';
+                //                 // Search on state level
+                //                 $sql_condition = self::generateSqlCondition('state_code',$collect);
+                //                 $locations = Location::whereRaw($sql_condition)->get();
+                //             }
+                //         }
+                //         if($locations->count() <= 0 && isset($request->include_local) && (bool) $request->include_local == true){
+                //             // Search on local government area
+                //             $searchLevel = 'local_government_area';
+                //             $sql_condition = self::generateSqlCondition('state_code',$collect);
+                //             $locations = Location::whereRaw($sql_condition)->get();
+                //         }
+                //     }
+                // }
+                if(sizeof($all_results) <= 0){
                     return BaseManager::errorResponse('No Results found with specified criteria');
                 }
-                return BaseManager::successResponse('Location fetched successfully',$uniqueLimitedResponse);
+                
+                
+                if(sizeof($all_results) <= 0){
+                    return BaseManager::errorResponse('No Results found with specified criteria');
+                }
+                return BaseManager::successResponse('Location fetched successfully',$all_results);
             }else{
                 return BaseManager::errorResponse('Please provide search key. Missing attribute: search_key');
             }
@@ -79,12 +136,12 @@ class SearchManager extends BaseManager {
     public static function getResultsFromAlgolia(Request $request)
     {
         $query = $request->search_key;
-        $limit = (int) $request->limit > 0 ? (int) $request->limit : 10; 
+        // $limit = (int) $request->limit > 0 ? (int) $request->limit : 10; 
 
         $searchLevel = ['name','region','urban_area','state','state_code'];
 
         foreach($searchLevel as $level){
-            $response   =  BaseManager::getAlgoliaResultOnFilters($level,$query,$limit); 
+            $response   =  BaseManager::getAlgoliaResultOnFilters($level,$query); 
             if($response){
                 $uniqueResults = BaseManager::locationTransformer($level,$response);
                 return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);
@@ -92,7 +149,7 @@ class SearchManager extends BaseManager {
         }
 
         //  Fallback method to fuzzy search
-         $response   =  BaseManager::getAlgoliaResultOnQuery($query,$limit); 
+         $response   =  BaseManager::getAlgoliaResultOnQuery($query); 
          if($response){
             $uniqueResults = BaseManager::locationTransformer('name',$response);
             return BaseManager::successResponse('Locations Fetched Successfully',$uniqueResults);

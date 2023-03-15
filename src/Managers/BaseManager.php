@@ -27,11 +27,10 @@ class BaseManager
     }
 
 
-    public static function getAlgoliaResultOnFilters($attribute,$query,$limit = 10){
+    public static function getAlgoliaResultOnFilters($attribute,$query){
         $manager    = AlgoliaSearchManager::getInstance()
                         ->query($query)
-                        ->filter($attribute,$query)
-                        ->limit($limit);
+                        ->filter($attribute,$query);
         $results    = $manager->searchResults();
 
         if($results && $results['num_of_results'] > 0){
@@ -40,11 +39,10 @@ class BaseManager
         return false;
     }
 
-    public static function getAlgoliaResultOnQuery($query,$limit = 10){
+    public static function getAlgoliaResultOnQuery($query){
         $manager    = AlgoliaSearchManager::getInstance()
                         ->query($query)
-                        ->unsetFilters()
-                        ->limit($limit);
+                        ->unsetFilters();
         $results    = $manager->searchResults();
 
         if($results && $results['num_of_results'] > 0){
@@ -55,6 +53,7 @@ class BaseManager
 
 
     public static function locationTransformer($searchLevel,$locations){
+
         $locations_response = array_map(function($location) use($searchLevel){
                 $resp = [];
                 $city = !empty($location['city']) || !empty($location['urban_area']) ? $location['urban_area'] :'';
@@ -74,6 +73,7 @@ class BaseManager
                         
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => $name,
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -93,9 +93,9 @@ class BaseManager
                         $state    != '' ? $result[] =  $state : null; 
                         // $result[] =  $location['postcode'] ;
                         $result[] = $country ;
-                        
                         $resp = array(
-                            'result'    => implode(', ',$result) ,         
+                            'result'    => implode(', ',$result) ,    
+                            'id'        => $location['id'],     
                             'suburb'    => '',
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -117,6 +117,7 @@ class BaseManager
 
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => '',
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -138,6 +139,7 @@ class BaseManager
 
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => '',
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -158,6 +160,7 @@ class BaseManager
 
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => '',
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -178,6 +181,7 @@ class BaseManager
 
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => '',
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -199,6 +203,7 @@ class BaseManager
 
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => '',
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -222,6 +227,7 @@ class BaseManager
                         
                         $resp = array(
                             'result'    => implode(', ',$result) ,
+                            'id'        => $location['id'],
                             'suburb'    => $name,
                             'state'     => $state,
                             'state_code' => !empty($location['state_code']) ? $location['state_code'] :'',
@@ -238,7 +244,6 @@ class BaseManager
                 }
                 return $resp;
          },$locations);
-
          $uniqueResults = array_reduce($locations_response, function($accumulator, $item) {
             $result = $item['result'];
             if (!in_array($result, array_column($accumulator, 'result'))) {
